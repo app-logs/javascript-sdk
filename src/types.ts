@@ -20,7 +20,7 @@ export interface LogEntry {
 
 export interface AppLogsConfig {
   apiKey: string;
-  endpoint?: string;
+  endpoint: string;
   batchSize?: number;
   flushInterval?: number;
   maxRetries?: number;

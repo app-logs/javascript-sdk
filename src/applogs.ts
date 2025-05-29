@@ -15,6 +15,9 @@ export class AppLogs {
     if (!config.apiKey) {
       throw new Error('API key is required');
     }
+    if (!config.endpoint) {
+      throw new Error('Endpoint is required');
+    }
     
     this.transport = new Transport(config);
     this.queue = new LogQueue({

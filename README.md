@@ -33,7 +33,7 @@ const { AppLogs } = require('@applogs/javascript');
 
 const logger = new AppLogs({
   apiKey: 'your-api-key',
-  endpoint: 'https://api.applogs.com/v1/logs', // Optional
+  endpoint: 'https://www.applogs.com/api/v1/projects/:project_id/ingest-endpoint', // Optional
   batchSize: 10, // Optional, default: 5
   flushInterval: 5000, // Optional, default: 5000ms
   onError: (error, failedBatch) => {
@@ -130,7 +130,7 @@ process.on('SIGTERM', () => {
 ```typescript
 interface AppLogsConfig {
   apiKey: string;              // Required: Your AppLogs API key
-  endpoint?: string;           // Optional: Custom endpoint URL
+  endpoint: string;           // Required: Your project's ingest endpoint URL
   batchSize?: number;          // Optional: Number of logs to batch (default: 5)
   flushInterval?: number;      // Optional: Flush interval in ms (default: 5000)
   maxRetries?: number;         // Optional: Max retry attempts (default: 3)
@@ -225,4 +225,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License - see LICENSE file for details 
+MIT License - see LICENSE file for details
