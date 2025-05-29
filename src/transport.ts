@@ -13,14 +13,16 @@ export class Transport {
 
   public async send(payload: LogEntry | LogEntry[]): Promise<void> {
     const isBrowser = typeof window !== 'undefined';
+    // Convert single entry to array if needed
+    const payloadArray = Array.isArray(payload) ? payload : [payload];
     
     for (let attempt = 1; attempt <= this.config.maxRetries; attempt++) {
       try {
         if (isBrowser) {
-          await this.sendBrowser(payload);
+          await this.sendBrowser(payloadArray);
           return;
         } else {
-          await this.sendNode(payload);
+          await this.sendNode(payloadArray);
           return;
         }
       } catch (error) {
@@ -30,7 +32,7 @@ export class Transport {
     }
   }
 
-  private async sendBrowser(payload: LogEntry | LogEntry[]): Promise<Response> {
+  private async sendBrowser(payload: LogEntry[]): Promise<Response> {
     const response = await fetch(this.config.endpoint!, {
       method: 'POST',
       headers: {
@@ -47,7 +49,7 @@ export class Transport {
     return response;
   }
 
-  private async sendNode(payload: LogEntry | LogEntry[]): Promise<void> {
+  private async sendNode(payload: LogEntry[]): Promise<void> {
     const http = await this.getNodeHttpModule();
     const data = JSON.stringify(payload);
     const url = new URL(this.config.endpoint!);
