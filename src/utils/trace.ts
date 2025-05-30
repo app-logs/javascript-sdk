@@ -1,5 +1,6 @@
 // Use a conditional import that Vite can handle
 const cryptoRandomBytes = typeof process !== 'undefined' && process.versions?.node
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
   ? require('crypto').randomBytes
   : null;
 
@@ -10,7 +11,7 @@ const cryptoRandomBytes = typeof process !== 'undefined' && process.versions?.no
  */
 export function generateTraceId(): string {
   const isBrowser = typeof window !== 'undefined';
-  
+
   if (!isBrowser && cryptoRandomBytes) {
     // Node.js environment
     return cryptoRandomBytes(16).toString('hex');
@@ -27,7 +28,7 @@ export function generateTraceId(): string {
   }
 
   // Fallback for older browsers
-  return Array.from({ length: 32 }, () => 
+  return Array.from({ length: 32 }, () =>
     Math.floor(Math.random() * 16).toString(16)
   ).join('');
 }

@@ -1,5 +1,7 @@
 # AppLogs JavaScript SDK
 
+[![npm version](https://img.shields.io/npm/v/@applogs/javascript.svg)](https://www.npmjs.com/package/@applogs/javascript)
+
 A powerful, type-safe logging SDK for both browser and Node.js environments. This SDK provides a simple yet powerful interface for sending logs to the AppLogs platform with features like batching, retries, and automatic environment detection.
 
 ## Features

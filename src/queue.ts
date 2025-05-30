@@ -3,7 +3,7 @@ import { Transport } from './transport';
 
 export class LogQueue {
   private queue: LogEntry[] = [];
-  private isProcessing: boolean = false;
+  private isProcessing = false;
   private flushIntervalId?: ReturnType<typeof setInterval>;
   
   constructor(

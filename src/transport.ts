@@ -1,9 +1,9 @@
-import { LogEntry, AppLogsConfig, EndpointResponse } from './types';
+import { AppLogsConfig, EndpointResponse, LogEntry } from './types';
 
 export class Transport {
   private config: Required<Pick<AppLogsConfig, 'maxRetries' | 'retryDelay' | 'endpointCacheDuration'>> & AppLogsConfig;
   private cachedIngestUrl: string | null = null;
-  private lastEndpointFetch: number = 0;
+  private lastEndpointFetch = 0;
   
   constructor(config: AppLogsConfig) {
     this.config = {
@@ -142,10 +142,10 @@ export class Transport {
     
     return new Promise((resolve, reject) => {
       const req = http.request(options, (res) => {
-        let responseData = '';
+        let _responseData = '';
         
         res.on('data', (chunk: Buffer) => {
-          responseData += chunk.toString();
+          _responseData += chunk.toString();
         });
         
         res.on('end', () => {
