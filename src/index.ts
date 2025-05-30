@@ -8,9 +8,10 @@ if (typeof window !== 'undefined') {
 
 // CommonJS export
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = AppLogs;
+  module.exports = { AppLogs };
+  module.exports.default = AppLogs;
 }
 
 // ES Module export
-export default AppLogs;
+export { AppLogs as default };
 export { AppLogs }; 

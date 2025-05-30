@@ -1,0 +1,16 @@
+{
+  "name": "node-app",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "dotenv -e .env ts-node src/index.ts"
+  },
+  "dependencies": {
+    "@applogs/javascript": "file:../../",
+    "dotenv": "^16.0.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.0.0",
+    "typescript": "^5.0.0"
+  }
+} 

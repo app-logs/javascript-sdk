@@ -18,6 +18,11 @@ export interface LogEntry {
   traceId?: string;
 }
 
+export interface EndpointResponse {
+  success: boolean;
+  ingestUrl: string;
+}
+
 export interface AppLogsConfig {
   apiKey: string;
   endpoint: string;
@@ -26,6 +31,7 @@ export interface AppLogsConfig {
   maxRetries?: number;
   retryDelay?: number;
   onError?: (error: Error, failedBatch: LogEntry[]) => void;
+  endpointCacheDuration?: number; // Duration in milliseconds to cache the ingest URL
 }
 
 export interface Context {

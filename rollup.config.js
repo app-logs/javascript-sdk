@@ -1,5 +1,7 @@
 import typescript from 'rollup-plugin-typescript2';
-import pkg from './package.json' assert { type: 'json' };
+import { readFileSync } from 'fs';
+
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
 
 export default {
   input: 'src/index.ts',
@@ -11,7 +13,7 @@ export default {
     },
     {
       file: pkg.module,
-      format: 'esm',
+      format: 'es',
       sourcemap: true
     }
   ],
@@ -21,9 +23,8 @@ export default {
   ],
   plugins: [
     typescript({
-      typescript: require('typescript'),
-      useTsconfigDeclarationDir: true,
-      clean: true
+      tsconfig: './tsconfig.json',
+      useTsconfigDeclarationDir: true
     })
   ]
 }; 

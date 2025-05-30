@@ -26,4 +26,7 @@ coverage/
 
 # Logs
 logs/
-*.log 
+*.log
+
+# Cache
+.parcel-cache/ 

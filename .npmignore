@@ -1,0 +1,28 @@
+# Source files
+src/
+test/
+
+# Development files
+.git/
+.github/
+.gitignore
+.npmignore
+.eslintrc
+jest.config.js
+rollup.config.js
+tsconfig.json
+
+# Test and coverage
+coverage/
+__tests__/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Environment variables
+.env
+.env.* 

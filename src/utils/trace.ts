@@ -1,4 +1,7 @@
-import { randomBytes } from 'crypto';
+// Use a conditional import that Vite can handle
+const cryptoRandomBytes = typeof process !== 'undefined' && process.versions?.node
+  ? require('crypto').randomBytes
+  : null;
 
 /**
  * Generates a unique trace ID based on the environment
@@ -8,9 +11,9 @@ import { randomBytes } from 'crypto';
 export function generateTraceId(): string {
   const isBrowser = typeof window !== 'undefined';
   
-  if (!isBrowser) {
+  if (!isBrowser && cryptoRandomBytes) {
     // Node.js environment
-    return randomBytes(16).toString('hex');
+    return cryptoRandomBytes(16).toString('hex');
   }
 
   // Browser environment
