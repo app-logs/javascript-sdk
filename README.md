@@ -35,7 +35,7 @@ const { AppLogs } = require('@applogs/javascript');
 
 const logger = new AppLogs({
   apiKey: 'your-api-key',
-  endpoint: 'https://www.applogs.com/api/v1/projects/:project_id/ingest-endpoint', // Optional
+  endpoint: 'your-project-ingest-endpoint', // Get this from your project settings
   batchSize: 10, // Optional, default: 5
   flushInterval: 5000, // Optional, default: 5000ms
   onError: (error, failedBatch) => {
@@ -79,7 +79,14 @@ import { AppLogs } from '@applogs/javascript';
 
 const logger = new AppLogs({
   apiKey: 'your-api-key',
-  endpoint: 'https://api.applogs.com/v1/logs'
+  endpoint: 'your-project-ingest-endpoint', // Get this from your project settings
+  batchSize: 10, // Optional, default: 5
+  flushInterval: 5000, // Optional, default: 5000ms
+  maxRetries: 3, // Optional, default: 3
+  retryDelay: 1000, // Optional, default: 1000ms
+  onError: (error, failedBatch) => {
+    console.error('Failed to send logs:', error);
+  }
 });
 
 // Set context
@@ -132,7 +139,7 @@ process.on('SIGTERM', () => {
 ```typescript
 interface AppLogsConfig {
   apiKey: string;              // Required: Your AppLogs API key
-  endpoint: string;           // Required: Your project's ingest endpoint URL
+  endpoint: string;           // Required: Your project's ingest endpoint URL from project settings
   batchSize?: number;          // Optional: Number of logs to batch (default: 5)
   flushInterval?: number;      // Optional: Flush interval in ms (default: 5000)
   maxRetries?: number;         // Optional: Max retry attempts (default: 3)

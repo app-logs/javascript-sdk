@@ -2,12 +2,13 @@ import { LogEntry, AppLogsConfig, Context, LogLevel, LogMetadata } from './types
 import { Transport } from './transport';
 import { LogQueue } from './queue';
 import { ensureTraceId, generateTraceId } from './utils/trace';
+import { VERSION } from './version';
 
 export class AppLogs {
   private transport: Transport;
   private queue: LogQueue;
   private context: Context = {};
-  private readonly version: string = '1.0.0';
+  private readonly version: string = VERSION;
   private readonly source: string = 'sdk';
   private currentTraceId: string;
 
