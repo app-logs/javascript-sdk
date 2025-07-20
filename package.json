@@ -15,7 +15,8 @@
     "lint": "eslint src --ext .ts",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
-    "publish": "npm publish --access public"
+    "publish": "npm publish --access public",
+    "local-release": "changeset version && changeset publish"
   },
   "keywords": [
     "logging",
@@ -29,6 +30,7 @@
   "author": "AppLogs",
   "license": "MIT",
   "devDependencies": {
+    "@changesets/cli": "^2.29.5",
     "@types/jest": "^29.5.0",
     "@types/node": "^18.15.11",
     "@typescript-eslint/eslint-plugin": "^5.57.1",
