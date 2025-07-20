@@ -1,5 +1,11 @@
 # @applogs/javascript
 
+## 0.1.3
+
+### Patch Changes
+
+- dba5c42: packages bugs fixing
+
 ## 0.1.2
 
 ### Patch Changes
