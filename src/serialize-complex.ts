@@ -28,7 +28,7 @@ interface SerializedObject {
  * Handles circular references, non-enumerable properties, and special object types
  */
 export function serializeObject(
-  obj: any, 
+  obj: any,
   options: SerializationOptions = {}
 ): any {
   const {
@@ -42,7 +42,7 @@ export function serializeObject(
   const seen = new WeakSet();
   const circularRefs = new WeakMap();
 
-  function serialize(value: any, depth: number = 0): any {
+  function serialize(value: any, depth = 0): any {
     // Handle primitive types
     if (value === null || value === undefined) {
       return value;
@@ -62,9 +62,9 @@ export function serializeObject(
 
     if (typeof value === 'function') {
       if (!includeFunctions) return { __type: 'Function', name: value.name };
-      return { 
-        __type: 'Function', 
-        name: value.name, 
+      return {
+        __type: 'Function',
+        name: value.name,
         source: value.toString(),
         length: value.length
       };
@@ -220,13 +220,13 @@ export function serializeObject(
 
       // Handle plain objects
       const result: SerializedObject = {};
-      
+
       if (constructorName && constructorName !== 'Object') {
         result.__type = constructorName;
       }
 
       // Get property names
-      const propNames = includeNonEnumerable 
+      const propNames = includeNonEnumerable
         ? Object.getOwnPropertyNames(value)
         : Object.keys(value);
 
@@ -237,14 +237,14 @@ export function serializeObject(
             // Skip getter-only properties that might throw
             continue;
           }
-          
+
           const propValue = value[key];
           result[key] = serialize(propValue, depth + 1);
         } catch (error) {
-          result[key] = { 
-            __type: 'PropertyAccessError', 
+          result[key] = {
+            __type: 'PropertyAccessError',
             error: String(error),
-            key 
+            key
           };
         }
       }
@@ -270,7 +270,7 @@ export function serializeObject(
 /**
  * Specialized serializer for Request objects
  */
-async function serializeRequest(request: Request, depth: number): Promise<SerializedObject> {
+async function serializeRequest(request: Request, _depth: number): Promise<SerializedObject> {
   const result: SerializedObject = {
     __type: 'Request',
     url: request.url,
@@ -323,7 +323,7 @@ async function serializeRequest(request: Request, depth: number): Promise<Serial
 /**
  * Specialized serializer for Response objects
  */
-async function serializeResponse(response: Response, depth: number): Promise<SerializedObject> {
+async function serializeResponse(response: Response, _depth: number): Promise<SerializedObject> {
   const result: SerializedObject = {
     __type: 'Response',
     url: response.url,
@@ -381,29 +381,31 @@ export function deserializeObject(serialized: any): any {
   switch (serialized.__type) {
     case 'Date':
       return new Date(serialized.value);
-    
+
     case 'RegExp':
       return new RegExp(serialized.source, serialized.flags);
-    
+
     case 'BigInt':
       return BigInt(serialized.value);
-    
+
     case 'Symbol':
       return Symbol(serialized.description);
-    
+
     case 'Error':
-      const error = new Error(serialized.message);
-      error.name = serialized.name;
-      if (serialized.stack) error.stack = serialized.stack;
-      
-      // Restore additional properties
-      Object.keys(serialized).forEach(key => {
-        if (!['__type', 'name', 'message', 'stack'].includes(key)) {
-          (error as any)[key] = deserializeObject(serialized[key]);
-        }
-      });
-      return error;
-    
+      {
+        const error = new Error(serialized.message);
+        error.name = serialized.name;
+        if (serialized.stack) error.stack = serialized.stack;
+
+        // Restore additional properties
+        Object.keys(serialized).forEach(key => {
+          if (!['__type', 'name', 'message', 'stack'].includes(key)) {
+            (error as any)[key] = deserializeObject(serialized[key]);
+          }
+        });
+        return error;
+      }
+
     case 'Map':
       return new Map(
         serialized.entries.map(([k, v]: [any, any]) => [
@@ -411,22 +413,24 @@ export function deserializeObject(serialized: any): any {
           deserializeObject(v)
         ])
       );
-    
+
     case 'Set':
       return new Set(serialized.values.map(deserializeObject));
-    
+
     case 'ArrayBuffer':
       return new Uint8Array(serialized.data).buffer;
-    
+
     case 'URL':
       return new URL(serialized.href);
-    
+
     case 'URLSearchParams':
-      const params = new URLSearchParams();
-      Object.entries(serialized.params).forEach(([key, values]) => {
-        (values as string[]).forEach(value => params.append(key, value));
-      });
-      return params;
+      {
+        const params = new URLSearchParams();
+        Object.entries(serialized.params).forEach(([key, values]) => {
+          (values as string[]).forEach(value => params.append(key, value));
+        });
+        return params;
+      }
   }
 
   // Handle arrays
@@ -448,7 +452,7 @@ export function deserializeObject(serialized: any): any {
 // Example usage and tests
 export function createCustomSerializer() {
   const customSerializers = new Map();
-  
+
   // Example custom serializer for a hypothetical class
   customSerializers.set('CustomClass', (obj: any) => ({
     __type: 'CustomClass',
