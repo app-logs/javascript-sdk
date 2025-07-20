@@ -1,6 +1,6 @@
 {
   "name": "@applogs/javascript",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "TypeScript/JavaScript SDK for AppLogs - A powerful logging management solution",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
