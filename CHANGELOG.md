@@ -1,5 +1,11 @@
 # @applogs/javascript
 
+## 0.1.2
+
+### Patch Changes
+
+- 2a8c67f: respository links updates
+
 ## 0.1.1
 
 ### Patch Changes
