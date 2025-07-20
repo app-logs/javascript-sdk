@@ -3,6 +3,7 @@ import { Transport } from './transport';
 import { LogQueue } from './queue';
 import { ensureTraceId, generateTraceId } from './utils/trace';
 import { VERSION } from './version';
+import { serializeObject } from './serialize-complex';
 
 export class AppLogs {
   private transport: Transport;
@@ -19,7 +20,7 @@ export class AppLogs {
     if (!config.endpoint) {
       throw new Error('Endpoint is required');
     }
-    
+
     this.transport = new Transport(config);
     this.queue = new LogQueue({
       ...config,
@@ -51,8 +52,8 @@ export class AppLogs {
   }
 
   public log(
-    level: LogLevel, 
-    message: string, 
+    level: LogLevel,
+    message: string,
     metadata?: Record<string, unknown>,
     traceId?: string
   ): void {
@@ -62,12 +63,16 @@ export class AppLogs {
         version: this.version,
         environment: this.detectEnvironment()
       },
-      log_metadata: metadata
+      log_metadata: serializeObject(metadata, {
+        maxDepth: 5,
+        includeNonEnumerable: true,
+        includeFunctions: false
+      })
     };
 
     // Use provided traceId, fallback to current traceId, or generate new one
     const finalTraceId = ensureTraceId(traceId || this.currentTraceId);
-    
+
     // Update current traceId if a new one was generated
     if (!traceId && !this.currentTraceId) {
       this.currentTraceId = finalTraceId;
@@ -81,12 +86,12 @@ export class AppLogs {
       source: this.source,
       traceId: finalTraceId
     };
-    
+
     this.queue.add(logEntry);
   }
 
   public debug(
-    message: string, 
+    message: string,
     metadata?: Record<string, unknown>,
     traceId?: string
   ): void {
@@ -94,7 +99,7 @@ export class AppLogs {
   }
 
   public info(
-    message: string, 
+    message: string,
     metadata?: Record<string, unknown>,
     traceId?: string
   ): void {
@@ -102,7 +107,7 @@ export class AppLogs {
   }
 
   public warn(
-    message: string, 
+    message: string,
     metadata?: Record<string, unknown>,
     traceId?: string
   ): void {
@@ -110,7 +115,7 @@ export class AppLogs {
   }
 
   public error(
-    message: string, 
+    message: string,
     metadata?: Record<string, unknown>,
     traceId?: string
   ): void {
