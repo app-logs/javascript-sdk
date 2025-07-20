@@ -1,5 +1,11 @@
 # @applogs/javascript
 
+## 0.1.1
+
+### Patch Changes
+
+- 78e9675: bug fix in serialize-complex.ts
+
 ## 0.1.0
 
 ### Minor Changes
