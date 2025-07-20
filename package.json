@@ -47,10 +47,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/applogs/javascript-sdk.git"
+    "url": "git+https://github.com/app-logs/javascript-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/applogs/javascript-sdk/issues"
+    "url": "https://github.com/app-logs/javascript-sdk/issues"
   },
-  "homepage": "https://github.com/applogs/javascript-sdk#readme"
+  "homepage": "https://github.com/app-logs/javascript-sdk#readme"
 }

@@ -2,4 +2,4 @@
 "@applogs/javascript": patch
 ---
 
-links updates
+respository links updates
