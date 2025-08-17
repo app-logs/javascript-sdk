@@ -50,7 +50,7 @@ export class LogQueue {
     }
   }
 
-  public addSync(logEntry: LogEntry): Promise<void> {
+  public addAsync(logEntry: LogEntry): Promise<void> {
     this.queue.push(logEntry);
     
     // For critical logs that need immediate sending

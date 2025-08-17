@@ -83,7 +83,7 @@ export default async function handler(req, res) {
 
     return res.json(result);
   } catch (error) {
-    await logger.errorSync('API request failed', { error: error.message });
+    await logger.errorAsync('API request failed', { error: error.message });
     return res.status(500).json({ error: 'Internal error' });
   }
 }
@@ -96,16 +96,16 @@ export default async function handler(req, res) {
   });
 
   try {
-    // Sync methods automatically send logs immediately
-    await logger.infoSync('Processing API request');
+    // Async methods automatically send logs immediately
+    await logger.infoAsync('Processing API request');
     
     const result = await processRequest(req);
     
-    await logger.infoSync('API request successful');
+    await logger.infoAsync('API request successful');
     
     return res.json(result);
   } catch (error) {
-    await logger.errorSync('API request failed', { error });
+    await logger.errorAsync('API request failed', { error });
     return res.status(500).json({ error: 'Failed' });
   }
 }
@@ -175,7 +175,7 @@ logger.warn('Slow API response', { responseTime: 2000 });
 try {
   await criticalOperation();
 } catch (error) {
-  await logger.errorSync('Critical operation failed', { error });
+  await logger.errorAsync('Critical operation failed', { error });
 }
 
 // Automatic cleanup on page unload
@@ -212,19 +212,19 @@ error(message: string, context?: Context): void
 debug(message: string, context?: Context): void
 ```
 
-#### Synchronous Logging (Serverless/Critical Logs)
+#### Asynchronous Immediate Logging (Serverless/Critical Logs)
 ```typescript
-logSync(level: LogLevel, message: string, context?: Context): Promise<void>
-infoSync(message: string, context?: Context): Promise<void>
-warnSync(message: string, context?: Context): Promise<void>
-errorSync(message: string, context?: Context): Promise<void>
-debugSync(message: string, context?: Context): Promise<void>
+logAsync(level: LogLevel, message: string, context?: Context): Promise<void>
+infoAsync(message: string, context?: Context): Promise<void>
+warnAsync(message: string, context?: Context): Promise<void>
+errorAsync(message: string, context?: Context): Promise<void>
+debugAsync(message: string, context?: Context): Promise<void>
 ```
 
 #### Trace ID Support
 ```typescript
 logWithTrace(level: LogLevel, message: string, traceId: string, context?: Context): void
-logWithTraceSync(level: LogLevel, message: string, traceId: string, context?: Context): Promise<void>
+logWithTraceAsync(level: LogLevel, message: string, traceId: string, context?: Context): Promise<void>
 ```
 
 ### Context Management
@@ -300,7 +300,7 @@ The SDK automatically detects and optimizes for different environments:
 
 2. **Use sync methods for critical logs**:
    ```typescript
-   await logger.errorSync('Critical error', context);
+   await logger.errorAsync('Critical error', context);
    ```
 
 3. **Use API route wrapper**:
@@ -337,13 +337,13 @@ The SDK automatically detects and optimizes for different environments:
 ### Logs not appearing in production serverless environments?
 
 1. Ensure you're calling `await logger.flush()` before API responses
-2. Use sync methods: `await logger.infoSync()` instead of `logger.info()`
+2. Use sync methods: `await logger.infoAsync()` instead of `logger.info()`
 3. Use the API wrapper: `logger.wrapApiRoute(handler)`
 4. Check that your API key and endpoint are correctly configured
 
 ### Performance concerns?
 
-1. Use async methods in persistent environments: `logger.info()` vs `await logger.infoSync()`
+1. Use async methods in persistent environments: `logger.info()` vs `await logger.infoAsync()`
 2. Adjust batch sizes based on your needs
 3. Use global context to avoid repeating metadata
 

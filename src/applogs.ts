@@ -62,9 +62,9 @@ export class AppLogs {
   /**
    * Log a message and ensure it's sent immediately - critical for API routes
    */
-  public async logSync(level: LogLevel, message: string, context?: Context): Promise<void> {
+  public async logAsync(level: LogLevel, message: string, context?: Context): Promise<void> {
     const logEntry = this.createLogEntry(level, message, context);
-    await this.queue.addSync(logEntry);
+    await this.queue.addAsync(logEntry);
   }
 
   /**
@@ -76,10 +76,10 @@ export class AppLogs {
     this.queue.add(logEntry);
   }
 
-  public async logWithTraceSync(level: LogLevel, message: string, traceId: string, context?: Context): Promise<void> {
+  public async logWithTraceAsync(level: LogLevel, message: string, traceId: string, context?: Context): Promise<void> {
     const logEntry = this.createLogEntry(level, message, context);
     logEntry.traceId = traceId;
-    await this.queue.addSync(logEntry);
+    await this.queue.addAsync(logEntry);
   }
   public info(message: string, context?: Context): void {
     this.log('info', message, context);
@@ -98,22 +98,22 @@ export class AppLogs {
   }
 
   /**
-   * Synchronous convenience methods - use in API routes
+   * Asynchronous convenience methods - use in API routes
    */
-  public async infoSync(message: string, context?: Context): Promise<void> {
-    await this.logSync('info', message, context);
+  public async infoAsync(message: string, context?: Context): Promise<void> {
+    await this.logAsync('info', message, context);
   }
 
-  public async warnSync(message: string, context?: Context): Promise<void> {
-    await this.logSync('warn', message, context);
+  public async warnAsync(message: string, context?: Context): Promise<void> {
+    await this.logAsync('warn', message, context);
   }
 
-  public async errorSync(message: string, context?: Context): Promise<void> {
-    await this.logSync('error', message, context);
+  public async errorAsync(message: string, context?: Context): Promise<void> {
+    await this.logAsync('error', message, context);
   }
 
-  public async debugSync(message: string, context?: Context): Promise<void> {
-    await this.logSync('debug', message, context);
+  public async debugAsync(message: string, context?: Context): Promise<void> {
+    await this.logAsync('debug', message, context);
   }
 
   /**
@@ -151,18 +151,18 @@ export class AppLogs {
     return async (...args: T): Promise<R> => {
       try {
         const result = await handler(...args);
-        
+
         // Ensure logs are sent before response
         await this.flush();
-        
+
         return result;
       } catch (error) {
         // Log the error
-        await this.errorSync('API route error', {
+        await this.errorAsync('API route error', {
           error: error instanceof Error ? error.message : String(error),
           stack: error instanceof Error ? error.stack : undefined
         });
-        
+
         throw error;
       }
     };
@@ -175,8 +175,8 @@ export class AppLogs {
     return async (req: any, res: any, next: any) => {
       // Add logging methods to request object
       req.log = this.log.bind(this);
-      req.logSync = this.logSync.bind(this);
-      
+      req.logAsync = this.logAsync.bind(this);
+
       // Override res.end to flush logs before response
       const originalEnd = res.end;
       res.end = async (...args: any[]) => {
@@ -188,14 +188,14 @@ export class AppLogs {
         }
         return originalEnd.apply(res, args);
       };
-      
+
       next();
     };
   }
 
   private createLogEntry(level: LogLevel, message: string, context?: Context): LogEntry {
     const timestamp = new Date().toISOString();
-    
+
     // Determine environment
     let environment = 'unknown';
     if (typeof process !== 'undefined' && process.env) {
@@ -203,10 +203,10 @@ export class AppLogs {
     } else if (typeof window !== 'undefined') {
       environment = 'browser';
     }
-    
+
     // Merge global context with local context (local context takes precedence)
     const mergedContext = { ...this.globalContext, ...context };
-    
+
     const entry: LogEntry = {
       level,
       message,
