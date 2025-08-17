@@ -2,19 +2,20 @@
 
 [![npm version](https://img.shields.io/npm/v/@applogs/javascript.svg)](https://www.npmjs.com/package/@applogs/javascript)
 
-A powerful, type-safe logging SDK for both browser and Node.js environments. This SDK provides a simple yet powerful interface for sending logs to the AppLogs platform with features like batching, retries, and automatic environment detection.
+A powerful, bulletproof logging SDK for both browser and Node.js environments with automatic serverless detection. This SDK provides a robust interface for sending logs to the AppLogs platform with features like intelligent batching, retries, automatic environment detection, and bulletproof flushing for serverless environments.
 
 ## Features
 
-- 🚀 TypeScript support with full type definitions
-- 🌐 Works in both browser and Node.js environments
-- 📦 Automatic batching of logs
-- 🔄 Automatic retries with configurable delay
-- 🔍 Environment detection (browser/node)
-- 🛡️ Error handling with custom callbacks
-- 📝 Context support for global metadata
-- 🔗 Automatic trace ID generation and management
-- ⚡ Zero dependencies
+- 🚀 **TypeScript support** with full type definitions
+- 🌐 **Universal compatibility** - Works in browser, Node.js, and serverless environments
+- 🔄 **Intelligent batching** - Smart batch sizes based on environment detection
+- 🛡️ **Bulletproof flushing** - Ensures logs are sent even in short-lived serverless functions
+- 🔄 **Automatic retries** with exponential backoff
+- 🎯 **Serverless optimized** - Automatic detection and optimization for serverless environments
+- 📝 **Global context support** for consistent metadata across all logs
+- 🔗 **Optional trace ID support** for distributed tracing
+- ⚡ **Zero dependencies**
+- 🌟 **API route helpers** for Next.js and Express
 
 ## Installation
 
@@ -24,111 +25,162 @@ npm install @applogs/javascript
 
 ## Quick Start
 
-### Browser Usage
+### Basic Usage
 
 ```javascript
-// ES Modules
 import { AppLogs } from '@applogs/javascript';
-
-// Or CommonJS
-const { AppLogs } = require('@applogs/javascript');
 
 const logger = new AppLogs({
   apiKey: 'your-api-key',
-  endpoint: 'your-project-ingest-endpoint', // Get this from your project settings
-  batchSize: 10, // Optional, default: 5
-  flushInterval: 5000, // Optional, default: 5000ms
+  endpoint: 'your-project-ingest-endpoint',
+  // Optional configuration
+  batchSize: 5,         // Default: 5 (persistent env), 1 (serverless)
+  flushInterval: 5000,  // Default: 5000ms (ignored in serverless)
+  maxRetries: 3,        // Default: 3
+  retryDelay: 1000,     // Default: 1000ms
   onError: (error, failedBatch) => {
     console.error('Failed to send logs:', error);
   }
 });
 
-// Set global context
+// Set global context (applies to all future logs)
 logger.setContext({
-  appVersion: '1.0.0',
+  service: 'user-api',
+  version: '1.2.3',
   environment: 'production'
 });
 
-// Get the current trace ID to use in downstream services
-const traceId = logger.getTraceId();
-console.log('Current trace ID:', traceId);
-
-// Log messages with the current trace ID
+// Basic logging
 logger.info('User logged in', { userId: 12345 });
-logger.error('Payment failed', { 
-  orderId: 'order_123', 
-  error: 'Insufficient funds' 
-});
-
-// Set a new trace ID for a new request
-const newTraceId = logger.setTraceId();
-logger.info('Starting new request', { requestId: 'req-123' });
-
-// Or set a specific trace ID
-logger.setTraceId('custom-trace-123');
-logger.info('Processing with custom trace', { action: 'process' });
+logger.error('Payment failed', { orderId: 'order_123' });
 
 // Clean up when done
 logger.destroy();
 ```
 
-### Node.js Usage
+### Next.js API Routes (Recommended Patterns)
 
-```typescript
+```javascript
+// Method 1: Manual flush (Most reliable)
+export default async function handler(req, res) {
+  const logger = new AppLogs({
+    apiKey: process.env.APP_LOGS_API_KEY,
+    endpoint: process.env.APP_LOGS_ENDPOINT
+  });
+
+  try {
+    logger.log('info', 'API request started', {
+      method: req.method,
+      path: req.url
+    });
+
+    const result = await processRequest(req);
+
+    logger.log('info', 'API request completed');
+
+    // ✅ CRITICAL: Flush before response in serverless
+    await logger.flush();
+
+    return res.json(result);
+  } catch (error) {
+    await logger.errorSync('API request failed', { error: error.message });
+    return res.status(500).json({ error: 'Internal error' });
+  }
+}
+
+// Method 2: Using sync methods (Alternative)
+export default async function handler(req, res) {
+  const logger = new AppLogs({
+    apiKey: process.env.APP_LOGS_API_KEY,
+    endpoint: process.env.APP_LOGS_ENDPOINT
+  });
+
+  try {
+    // Sync methods automatically send logs immediately
+    await logger.infoSync('Processing API request');
+    
+    const result = await processRequest(req);
+    
+    await logger.infoSync('API request successful');
+    
+    return res.json(result);
+  } catch (error) {
+    await logger.errorSync('API request failed', { error });
+    return res.status(500).json({ error: 'Failed' });
+  }
+}
+
+// Method 3: Using wrapper (Cleanest)
+const logger = new AppLogs({
+  apiKey: process.env.APP_LOGS_API_KEY,
+  endpoint: process.env.APP_LOGS_ENDPOINT
+});
+
+export default logger.wrapApiRoute(async (req, res) => {
+  logger.log('info', 'API called');
+  const result = await processRequest(req);
+  logger.log('info', 'API completed');
+  return res.json(result);
+  // Logs automatically flushed before response
+});
+```
+
+### Express.js with Middleware
+
+```javascript
+import express from 'express';
 import { AppLogs } from '@applogs/javascript';
 
+const app = express();
 const logger = new AppLogs({
-  apiKey: 'your-api-key',
-  endpoint: 'your-project-ingest-endpoint', // Get this from your project settings
-  batchSize: 10, // Optional, default: 5
-  flushInterval: 5000, // Optional, default: 5000ms
-  maxRetries: 3, // Optional, default: 3
-  retryDelay: 1000, // Optional, default: 1000ms
-  onError: (error, failedBatch) => {
-    console.error('Failed to send logs:', error);
-  }
+  apiKey: process.env.APP_LOGS_API_KEY,
+  endpoint: process.env.APP_LOGS_ENDPOINT
 });
 
-// Set context
-logger.setContext({
-  service: 'payment-service',
-  region: 'us-east-1'
-});
+// Use middleware for automatic log flushing
+app.use(logger.middleware());
 
-// Example of using trace ID in an Express middleware
-app.use((req, res, next) => {
-  // Set trace ID from request header or generate new one
-  const traceId = req.headers['x-trace-id'] as string;
-  logger.setTraceId(traceId);
+app.get('/users', async (req, res) => {
+  // Logging methods available on req
+  req.log('info', 'Fetching users');
   
-  // Add trace ID to response for downstream services
-  res.setHeader('x-trace-id', logger.getTraceId());
-  next();
+  const users = await getUsers();
+  req.log('info', 'Users fetched', { count: users.length });
+  
+  res.json(users);
+  // Logs automatically flushed before response
+});
+```
+
+### Browser Usage
+
+```javascript
+const logger = new AppLogs({
+  apiKey: 'your-client-api-key',
+  endpoint: 'https://api.app-logs.com/ingest',
+  batchSize: 10,
+  flushInterval: 5000
 });
 
-app.post('/payment', async (req, res) => {
-  try {
-    // Logs will automatically use the current trace ID
-    logger.info('Processing payment', { orderId: req.body.orderId });
-    
-    // You can also get the current trace ID to use in other services
-    const traceId = logger.getTraceId();
-    await paymentService.process(req.body, traceId);
-    
-    logger.info('Payment processed successfully');
-    res.json({ success: true });
-  } catch (error) {
-    logger.error('Payment processing failed', {
-      error: error.message,
-      stack: error.stack
-    });
-    res.status(500).json({ error: 'Payment failed' });
-  }
+logger.setContext({
+  userId: getCurrentUserId(),
+  sessionId: getSessionId()
 });
 
-// Clean up
-process.on('SIGTERM', () => {
-  logger.destroy();
+// Standard logging (batched)
+logger.info('Page loaded', { page: window.location.pathname });
+logger.warn('Slow API response', { responseTime: 2000 });
+
+// Critical logs (immediate)
+try {
+  await criticalOperation();
+} catch (error) {
+  await logger.errorSync('Critical operation failed', { error });
+}
+
+// Automatic cleanup on page unload
+window.addEventListener('beforeunload', async () => {
+  await logger.flush();
 });
 ```
 
@@ -138,54 +190,81 @@ process.on('SIGTERM', () => {
 
 ```typescript
 interface AppLogsConfig {
-  apiKey: string;              // Required: Your AppLogs API key
-  endpoint: string;           // Required: Your project's ingest endpoint URL from project settings
-  batchSize?: number;          // Optional: Number of logs to batch (default: 5)
-  flushInterval?: number;      // Optional: Flush interval in ms (default: 5000)
-  maxRetries?: number;         // Optional: Max retry attempts (default: 3)
-  retryDelay?: number;         // Optional: Retry delay in ms (default: 1000)
+  apiKey: string;                    // Required: Your AppLogs API key
+  endpoint: string;                  // Required: Your project's ingest endpoint URL
+  batchSize?: number;                // Optional: Batch size (default: 5 persistent, 1 serverless)
+  flushInterval?: number;            // Optional: Flush interval in ms (default: 5000)
+  maxRetries?: number;               // Optional: Max retry attempts (default: 3)
+  retryDelay?: number;               // Optional: Retry delay in ms (default: 1000)
+  endpointCacheDuration?: number;    // Optional: Cache duration for ingest URL (default: 3600000)
   onError?: (error: Error, failedBatch: LogEntry[]) => void; // Optional: Error callback
 }
 ```
 
-### Methods
+### Core Logging Methods
 
-#### `constructor(config: AppLogsConfig)`
-Creates a new AppLogs instance with an automatically generated trace ID.
+#### Standard Async Logging (Persistent Environments)
+```typescript
+log(level: LogLevel, message: string, context?: Context): void
+info(message: string, context?: Context): void
+warn(message: string, context?: Context): void
+error(message: string, context?: Context): void
+debug(message: string, context?: Context): void
+```
 
-#### `getTraceId(): string`
-Gets the current trace ID that will be used for subsequent logs.
+#### Synchronous Logging (Serverless/Critical Logs)
+```typescript
+logSync(level: LogLevel, message: string, context?: Context): Promise<void>
+infoSync(message: string, context?: Context): Promise<void>
+warnSync(message: string, context?: Context): Promise<void>
+errorSync(message: string, context?: Context): Promise<void>
+debugSync(message: string, context?: Context): Promise<void>
+```
 
-#### `setTraceId(traceId?: string): string`
-Sets a new trace ID for subsequent logs. If no trace ID is provided, generates a new one.
-Returns the new trace ID.
+#### Trace ID Support
+```typescript
+logWithTrace(level: LogLevel, message: string, traceId: string, context?: Context): void
+logWithTraceSync(level: LogLevel, message: string, traceId: string, context?: Context): Promise<void>
+```
 
-#### `setContext(context: Context): void`
-Sets global context that will be included with every log entry.
+### Context Management
 
-#### `log(level: LogLevel, message: string, metadata?: Record<string, unknown>, traceId?: string): void`
-Logs a message with the specified level, optional metadata, and optional trace ID.
-If no trace ID is provided, uses the current trace ID.
+```typescript
+setContext(context: Context): void          // Replace all global context
+addContext(context: Context): void          // Add to existing context
+removeContext(keys: string[]): void         // Remove specific keys
+clearContext(): void                        // Clear all context
+getContext(): Context                       // Get current context
+```
 
-#### `debug(message: string, metadata?: Record<string, unknown>, traceId?: string): void`
-Logs a debug message.
+### Control Methods
 
-#### `info(message: string, metadata?: Record<string, unknown>, traceId?: string): void`
-Logs an info message.
+```typescript
+flush(): Promise<void>                      // Flush all pending logs
+destroy(): void                             // Clean up resources
+getStatus(): StatusInfo                     // Get diagnostic information
+```
 
-#### `warn(message: string, metadata?: Record<string, unknown>, traceId?: string): void`
-Logs a warning message.
+### Helpers
 
-#### `error(message: string, metadata?: Record<string, unknown>, traceId?: string): void`
-Logs an error message.
-
-#### `destroy(): void`
-Cleans up resources and flushes any remaining logs.
+```typescript
+wrapApiRoute<T>(handler: T): T             // Wrap API route with auto-flush
+middleware()                               // Express/Connect middleware
+```
 
 ### Types
 
 ```typescript
 type LogLevel = 'debug' | 'info' | 'warn' | 'error';
+
+interface LogEntry {
+  level: LogLevel;
+  message: string;
+  metadata?: LogMetadata;
+  timestamp?: string;
+  source: string;
+  traceId?: string;
+}
 
 interface LogMetadata {
   context: Record<string, unknown>;
@@ -196,37 +275,88 @@ interface LogMetadata {
   log_metadata?: Record<string, unknown>;
 }
 
-interface LogEntry {
-  level: LogLevel;
-  message: string;
-  metadata?: LogMetadata;
-  timestamp?: string;
-  source: string;  // Always set to "sdk"
-  traceId: string; // Always present, either provided or generated
-}
-
 interface Context {
   [key: string]: unknown;
 }
 ```
 
+## Environment Detection
+
+The SDK automatically detects and optimizes for different environments:
+
+- **Serverless Functions**: Uses smaller batch sizes (1), immediate flushing, no intervals
+- **Persistent Environments**: Uses larger batch sizes (5), background flushing, intervals
+- **Browser**: Uses sendBeacon for reliable log delivery during page transitions
+- **Node.js**: Uses appropriate HTTP clients and cleanup handlers
+
 ## Best Practices
 
-1. **Always call destroy()**: When shutting down your application, call `destroy()` to ensure all logs are sent.
+### For Serverless (Vercel, Netlify, AWS Lambda, etc.)
 
-2. **Use context wisely**: Set global context for information that applies to all logs (e.g., environment, version).
+1. **Always flush before responses**:
+   ```typescript
+   await logger.flush(); // Before res.json()
+   ```
 
-3. **Trace ID Management**:
-   - Use `getTraceId()` to get the current trace ID for downstream services
-   - Use `setTraceId()` to set a new trace ID for a new request/operation
-   - Pass trace IDs between services using headers (e.g., `x-trace-id`)
-   - Let the SDK handle trace ID generation when not explicitly set
+2. **Use sync methods for critical logs**:
+   ```typescript
+   await logger.errorSync('Critical error', context);
+   ```
 
-4. **Error handling**: Implement the `onError` callback to handle failed log transmissions.
+3. **Use API route wrapper**:
+   ```typescript
+   export default logger.wrapApiRoute(handler);
+   ```
 
-5. **Batch size**: Adjust `batchSize` based on your application's needs. Larger batches are more efficient but may delay log delivery.
+### For Persistent Environments
 
-6. **Environment detection**: The SDK automatically detects the environment (browser/node) and uses the appropriate transport.
+1. **Set global context once**:
+   ```typescript
+   logger.setContext({ service: 'api', version: '1.0' });
+   ```
+
+2. **Use async methods for performance**:
+   ```typescript
+   logger.info('Regular log'); // Non-blocking
+   ```
+
+3. **Clean up on shutdown**:
+   ```typescript
+   process.on('SIGTERM', () => logger.destroy());
+   ```
+
+### General
+
+1. **Context hierarchy**: Local context overrides global context
+2. **Error handling**: Implement `onError` callback for failed transmissions
+3. **Trace IDs**: Use for distributed tracing across services
+4. **Batch sizes**: Smaller for serverless (1), larger for persistent (5-10)
+
+## Troubleshooting
+
+### Logs not appearing in production serverless environments?
+
+1. Ensure you're calling `await logger.flush()` before API responses
+2. Use sync methods: `await logger.infoSync()` instead of `logger.info()`
+3. Use the API wrapper: `logger.wrapApiRoute(handler)`
+4. Check that your API key and endpoint are correctly configured
+
+### Performance concerns?
+
+1. Use async methods in persistent environments: `logger.info()` vs `await logger.infoSync()`
+2. Adjust batch sizes based on your needs
+3. Use global context to avoid repeating metadata
+
+### Debugging?
+
+```typescript
+const status = logger.getStatus();
+console.log({
+  isServerless: status.isServerless,
+  queueLength: status.queueLength,
+  config: status.config
+});
+```
 
 ## Contributing
 
