@@ -1,5 +1,11 @@
 # @applogs/javascript
 
+## 0.1.8
+
+### Patch Changes
+
+- 2c5a746: Sync functions renamed to Async for naming convention accuracy
+
 ## 0.1.7
 
 ### Patch Changes
