@@ -1,6 +1,6 @@
 {
   "name": "@applogs/javascript",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "TypeScript/JavaScript SDK for AppLogs - A powerful logging management solution",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
@@ -9,14 +9,14 @@
     "dist"
   ],
   "scripts": {
-    "update-version": "node scripts/update-version.js",
-    "build": "npm run update-version && tsc && rollup -c",
+    "build": "tsc && rollup -c",
     "test": "jest --passWithNoTests",
     "lint": "eslint src --ext .ts",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run lint",
-    "publish": "npm publish --access public",
-    "local-release": "changeset version && changeset publish"
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run build && changeset publish"
   },
   "keywords": [
     "logging",
@@ -52,5 +52,8 @@
   "bugs": {
     "url": "https://github.com/app-logs/javascript-sdk/issues"
   },
-  "homepage": "https://github.com/app-logs/javascript-sdk#readme"
+  "homepage": "https://github.com/app-logs/javascript-sdk#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }

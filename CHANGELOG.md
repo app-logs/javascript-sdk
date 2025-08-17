@@ -1,5 +1,11 @@
 # @applogs/javascript
 
+## 0.1.4
+
+### Patch Changes
+
+- f74ee30: Edge transport
+
 ## 0.1.3
 
 ### Patch Changes
