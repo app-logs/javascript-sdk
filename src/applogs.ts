@@ -1,137 +1,246 @@
-import { LogEntry, AppLogsConfig, Context, LogLevel, LogMetadata } from './types';
-import { Transport } from './transport';
+import { AppLogsConfig, LogEntry, LogLevel, Context } from './types';
 import { LogQueue } from './queue';
-import { ensureTraceId, generateTraceId } from './utils/trace';
-import { VERSION } from './version';
-import { serializeObject } from './serialize-complex';
+import { Transport } from './transport';
 
 export class AppLogs {
-  private transport: Transport;
   private queue: LogQueue;
-  private context: Context = {};
-  private readonly version: string = VERSION;
-  private readonly source: string = 'sdk';
-  private currentTraceId: string;
+  private transport: Transport;
+  private config: AppLogsConfig;
+  private globalContext: Context = {};
 
   constructor(config: AppLogsConfig) {
-    if (!config.apiKey) {
-      throw new Error('API key is required');
-    }
-    if (!config.endpoint) {
-      throw new Error('Endpoint is required');
-    }
-
+    this.config = { ...config };
     this.transport = new Transport(config);
-    this.queue = new LogQueue({
-      ...config,
-      transport: this.transport
-    });
-    this.currentTraceId = generateTraceId();
+    this.queue = new LogQueue({ ...config, transport: this.transport });
   }
 
   /**
-   * Gets the current trace ID
-   * @returns The current trace ID
+   * Set global context that will be included in all log entries
    */
-  public getTraceId(): string {
-    return this.currentTraceId;
-  }
-
-  /**
-   * Sets a new trace ID for subsequent logs
-   * @param traceId The trace ID to use, or undefined to generate a new one
-   * @returns The new trace ID
-   */
-  public setTraceId(traceId?: string): string {
-    this.currentTraceId = ensureTraceId(traceId);
-    return this.currentTraceId;
-  }
-
   public setContext(context: Context): void {
-    this.context = { ...this.context, ...context };
+    this.globalContext = { ...context };
   }
 
-  public log(
-    level: LogLevel,
-    message: string,
-    metadata?: Record<string, unknown>,
-    traceId?: string
-  ): void {
-    const logMetadata: LogMetadata = {
-      context: this.context,
-      sdk: {
-        version: this.version,
-        environment: this.detectEnvironment()
-      },
-      log_metadata: serializeObject(metadata, {
-        maxDepth: 5,
-        includeNonEnumerable: true,
-        includeFunctions: false
-      })
-    };
+  /**
+   * Add to existing global context
+   */
+  public addContext(context: Context): void {
+    this.globalContext = { ...this.globalContext, ...context };
+  }
 
-    // Use provided traceId, fallback to current traceId, or generate new one
-    const finalTraceId = ensureTraceId(traceId || this.currentTraceId);
+  /**
+   * Remove specific keys from global context
+   */
+  public removeContext(keys: string[]): void {
+    const newContext = { ...this.globalContext };
+    keys.forEach(key => delete newContext[key]);
+    this.globalContext = newContext;
+  }
 
-    // Update current traceId if a new one was generated
-    if (!traceId && !this.currentTraceId) {
-      this.currentTraceId = finalTraceId;
-    }
+  /**
+   * Clear all global context
+   */
+  public clearContext(): void {
+    this.globalContext = {};
+  }
 
-    const logEntry: LogEntry = {
-      level,
-      message,
-      metadata: logMetadata,
-      timestamp: new Date().toISOString(),
-      source: this.source,
-      traceId: finalTraceId
-    };
+  /**
+   * Get current global context
+   */
+  public getContext(): Context {
+    return { ...this.globalContext };
+  }
 
+  /**
+   * Log a message - standard async logging
+   */
+  public log(level: LogLevel, message: string, context?: Context): void {
+    const logEntry = this.createLogEntry(level, message, context);
     this.queue.add(logEntry);
   }
 
-  public debug(
-    message: string,
-    metadata?: Record<string, unknown>,
-    traceId?: string
-  ): void {
-    this.log('debug', message, metadata, traceId);
+  /**
+   * Log a message and ensure it's sent immediately - critical for API routes
+   */
+  public async logSync(level: LogLevel, message: string, context?: Context): Promise<void> {
+    const logEntry = this.createLogEntry(level, message, context);
+    await this.queue.addSync(logEntry);
   }
 
-  public info(
-    message: string,
-    metadata?: Record<string, unknown>,
-    traceId?: string
-  ): void {
-    this.log('info', message, metadata, traceId);
+  /**
+   * Log with trace ID for distributed tracing
+   */
+  public logWithTrace(level: LogLevel, message: string, traceId: string, context?: Context): void {
+    const logEntry = this.createLogEntry(level, message, context);
+    logEntry.traceId = traceId;
+    this.queue.add(logEntry);
   }
 
-  public warn(
-    message: string,
-    metadata?: Record<string, unknown>,
-    traceId?: string
-  ): void {
-    this.log('warn', message, metadata, traceId);
+  public async logWithTraceSync(level: LogLevel, message: string, traceId: string, context?: Context): Promise<void> {
+    const logEntry = this.createLogEntry(level, message, context);
+    logEntry.traceId = traceId;
+    await this.queue.addSync(logEntry);
+  }
+  public info(message: string, context?: Context): void {
+    this.log('info', message, context);
   }
 
-  public error(
-    message: string,
-    metadata?: Record<string, unknown>,
-    traceId?: string
-  ): void {
-    this.log('error', message, metadata, traceId);
+  public warn(message: string, context?: Context): void {
+    this.log('warn', message, context);
   }
 
+  public error(message: string, context?: Context): void {
+    this.log('error', message, context);
+  }
+
+  public debug(message: string, context?: Context): void {
+    this.log('debug', message, context);
+  }
+
+  /**
+   * Synchronous convenience methods - use in API routes
+   */
+  public async infoSync(message: string, context?: Context): Promise<void> {
+    await this.logSync('info', message, context);
+  }
+
+  public async warnSync(message: string, context?: Context): Promise<void> {
+    await this.logSync('warn', message, context);
+  }
+
+  public async errorSync(message: string, context?: Context): Promise<void> {
+    await this.logSync('error', message, context);
+  }
+
+  public async debugSync(message: string, context?: Context): Promise<void> {
+    await this.logSync('debug', message, context);
+  }
+
+  /**
+   * Flush all pending logs - use before API route responses
+   */
+  public async flush(): Promise<void> {
+    await this.queue.flushAndWait();
+  }
+
+  /**
+   * Get diagnostic information
+   */
+  public getStatus(): {
+    queueLength: number;
+    isServerless: boolean;
+    config: Partial<AppLogsConfig>;
+  } {
+    return {
+      queueLength: this.queue.getQueueLength(),
+      isServerless: this.queue.isServerless(),
+      config: {
+        batchSize: this.config.batchSize,
+        flushInterval: this.config.flushInterval,
+        maxRetries: this.config.maxRetries
+      }
+    };
+  }
+
+  /**
+   * Create API route wrapper for automatic flushing
+   */
+  public wrapApiRoute<T extends any[], R>(
+    handler: (...args: T) => Promise<R> | R
+  ): (...args: T) => Promise<R> {
+    return async (...args: T): Promise<R> => {
+      try {
+        const result = await handler(...args);
+        
+        // Ensure logs are sent before response
+        await this.flush();
+        
+        return result;
+      } catch (error) {
+        // Log the error
+        await this.errorSync('API route error', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
+        });
+        
+        throw error;
+      }
+    };
+  }
+
+  /**
+   * Create middleware for Express/Connect-style frameworks
+   */
+  public middleware() {
+    return async (req: any, res: any, next: any) => {
+      // Add logging methods to request object
+      req.log = this.log.bind(this);
+      req.logSync = this.logSync.bind(this);
+      
+      // Override res.end to flush logs before response
+      const originalEnd = res.end;
+      res.end = async (...args: any[]) => {
+        try {
+          await this.flush();
+        } catch (error) {
+          // Don't block response on logging errors
+          console.error('Failed to flush logs:', error);
+        }
+        return originalEnd.apply(res, args);
+      };
+      
+      next();
+    };
+  }
+
+  private createLogEntry(level: LogLevel, message: string, context?: Context): LogEntry {
+    const timestamp = new Date().toISOString();
+    
+    // Determine environment
+    let environment = 'unknown';
+    if (typeof process !== 'undefined' && process.env) {
+      environment = process.env.NODE_ENV || 'production';
+    } else if (typeof window !== 'undefined') {
+      environment = 'browser';
+    }
+    
+    // Merge global context with local context (local context takes precedence)
+    const mergedContext = { ...this.globalContext, ...context };
+    
+    const entry: LogEntry = {
+      level,
+      message,
+      timestamp,
+      source: 'javascript-sdk',
+      metadata: {
+        context: mergedContext,
+        sdk: {
+          version: '1.0.0',
+          environment
+        }
+      }
+    };
+
+    // Add platform-specific metadata if available
+    if (typeof process !== 'undefined' && process.env) {
+      if (process.env.VERCEL) {
+        entry.metadata!.log_metadata = { ...entry.metadata!.log_metadata, platform: 'vercel' };
+      }
+      if (process.env.NETLIFY) {
+        entry.metadata!.log_metadata = { ...entry.metadata!.log_metadata, platform: 'netlify' };
+      }
+      if (process.env.AWS_LAMBDA_FUNCTION_NAME) {
+        entry.metadata!.log_metadata = { ...entry.metadata!.log_metadata, platform: 'aws-lambda' };
+      }
+    }
+
+    return entry;
+  }
+
+  /**
+   * Clean up resources
+   */
   public destroy(): void {
     this.queue.destroy();
   }
-
-  private detectEnvironment(): string {
-    if (typeof window !== 'undefined') {
-      return 'browser';
-    } else if (typeof process !== 'undefined' && process.versions?.node) {
-      return 'node';
-    }
-    return 'unknown';
-  }
-} 
+}
