@@ -1,5 +1,74 @@
 # @applogs/javascript
 
+## 0.1.6
+
+### Patch Changes
+
+- b303e55: Optimization for serverless environment
+
+  Key Changes Made:
+
+  1. Environment Detection
+
+  Automatically detects serverless vs persistent environments
+  Adjusts behavior accordingly without hardcoding platform names
+
+  2. Bulletproof Flushing
+
+  flushAndWait() method ensures logs are sent before function termination
+  Multiple fallback mechanisms (sendBeacon, XHR, sync requests)
+  Retry logic for failed flushes
+
+  3. Dual Logging Methods
+
+  log() - Standard async logging for persistent environments
+  logSync() - Immediate sending for serverless environments
+  Convenience methods for both approaches
+
+  4. API Route Integration
+
+  wrapApiRoute() method for automatic log flushing
+  Middleware support for Express/Connect
+  Manual flush methods for explicit control
+
+  5. Enhanced Cleanup Handlers
+
+  Multiple exit scenarios covered (beforeunload, pagehide, SIGTERM, etc.)
+  Browser sendBeacon support for reliable logging during page transitions
+  Synchronous fallbacks for critical shutdown scenarios
+
+  6. Smart Batching
+
+  Smaller batch sizes in serverless (default 1)
+  Larger batches in persistent environments (default 5)
+  Immediate flushing options
+
+  7. Added Tracing Support
+
+  logWithTrace() and logWithTraceSync() methods for distributed tracing
+  Automatic trace ID generation in examples
+
+  8. Environment Detection
+
+  Properly detects browser vs Node.js environments
+  Sets appropriate SDK environment values
+  Adds platform metadata when detected
+
+  How to Use in Next.js API Routes:
+
+  ```typescript
+  // Simply add this before your response:
+  await appLogs.flush();
+
+  // Or use sync methods:
+  await appLogs.infoSync("message", context);
+
+  // Or wrap your handler:
+  export default appLogs.wrapApiRoute(yourHandler);
+  ```
+
+  This version will work reliably across all deployment environments without requiring platform-specific configuration.
+
 ## 0.1.5
 
 ### Patch Changes
