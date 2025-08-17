@@ -1,5 +1,57 @@
 # @applogs/javascript
 
+## 0.1.7
+
+### Patch Changes
+
+- 959b2cb: `setContext` is a common and useful feature in logging libraries that allows you to set persistent context that gets automatically added to all subsequent log entries.
+
+  `setContext` is a **critical feature** that most logging libraries should have.
+
+  ## What `setContext` Does:
+
+  ### 1. **Global Context Storage**
+
+  ```typescript
+  // Sets persistent context for ALL future logs
+  appLogs.setContext({
+    service: "user-api",
+    version: "1.2.3",
+    environment: "production",
+  });
+  ```
+
+  ### 2. **Context Merging**
+
+  ```typescript
+  // Global context gets merged with local context
+  appLogs.info("User action", { action: "login", userId: "123" });
+  // Results in both global context AND local context in the log
+  ```
+
+  ### 3. **Context Management Methods**
+
+  - `setContext()` - Replace all global context
+  - `addContext()` - Add to existing global context
+  - `removeContext()` - Remove specific keys
+  - `clearContext()` - Remove all global context
+  - `getContext()` - View current global context
+
+  ## Why This Was Missing (and Important):
+
+  1. **Without `setContext`**, you'd have to manually pass the same context to every single log call
+  2. **With `setContext`**, you set it once and it automatically appears in all logs
+  3. **Essential for**:
+     - Request tracing (requestId, userId, etc.)
+     - Service identification (service name, version, etc.)
+     - Environment context (region, deployment, etc.)
+
+  ## Priority Order:
+
+  Local context > Global context, so you can always override global values when needed.
+
+  This was definitely a missing piece that makes the logging library much more practical to use!
+
 ## 0.1.6
 
 ### Patch Changes
