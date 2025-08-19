@@ -1,5 +1,11 @@
 # @applogs/javascript
 
+## 0.1.9
+
+### Patch Changes
+
+- a94fd79: serializeObject included in the log entry creation
+
 ## 0.1.8
 
 ### Patch Changes
