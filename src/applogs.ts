@@ -1,6 +1,7 @@
 import { AppLogsConfig, LogEntry, LogLevel, Context } from './types';
 import { LogQueue } from './queue';
 import { Transport } from './transport';
+import { serializeObject } from './serialize-complex';
 
 export class AppLogs {
   private queue: LogQueue;
@@ -205,7 +206,7 @@ export class AppLogs {
     }
 
     // Merge global context with local context (local context takes precedence)
-    const mergedContext = { ...this.globalContext, ...context };
+    const mergedContext = { ...this.globalContext, ...serializeObject(context) };
 
     const entry: LogEntry = {
       level,
