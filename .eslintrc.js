@@ -18,6 +18,7 @@ module.exports = {
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/no-empty-function': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
+    "no-empty": "off",
     '@typescript-eslint/no-unused-vars': ['error', { 
       'argsIgnorePattern': '^_',
       'varsIgnorePattern': '^_'

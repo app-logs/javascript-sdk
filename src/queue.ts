@@ -182,8 +182,7 @@ export class LogQueue {
       } else {
         this.flush().catch(() => { });
       }
-    } catch (error) {
-    }
+    } catch (error) {}
   }
 
   private flushWithXHR(batch: LogEntry[]): void {
