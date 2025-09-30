@@ -1,5 +1,11 @@
 # @applogs/javascript
 
+## 0.1.10
+
+### Patch Changes
+
+- 392e68b: Prevent the cleanup process to throw error
+
 ## 0.1.9
 
 ### Patch Changes
